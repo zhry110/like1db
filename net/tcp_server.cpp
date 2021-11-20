@@ -61,7 +61,7 @@ void tcp_server::stop() {
     this->stopped = true;
 }
 
-void tcp_server::loop() {
+void tcp_server::start() {
     assert(!listen_fds.empty());
     std::for_each(listen_fds.begin(), listen_fds.end(), [&](int fd) -> void {
         epoll_event event{};
@@ -90,23 +90,18 @@ void tcp_server::loop() {
 
 CoroutineTask tcp_server::accept_request(int fd) {
     while (!stopped) {
-        co_await coro_accept(fd);
-    }
-}
-
-std::experimental::suspend_always tcp_server::coro_accept(int fd) {
-    sockaddr addr{};
-    socklen_t len = sizeof(addr);
-    int req_fd;
-    for (int i = 0; i < max_accept_size; i++) {
-        req_fd = accept(fd, &addr, &len);
-        if (req_fd < 0 && errno != EAGAIN) {
-            logger.error("can not accept");
-        } else if (req_fd > 0){
-            logger.info("accept a request");
+        sockaddr addr{};
+        socklen_t len = sizeof(addr);
+        int req_fd = accept(fd, &addr, &len);
+        if (req_fd < 0) {
+            if (errno == EAGAIN) {
+                co_await std::experimental::suspend_always();
+            } else {
+                logger.error("accept error");
+                std::terminate();
+            }
         } else {
-            return std::experimental::suspend_always();
+
         }
     }
-    return std::experimental::suspend_always();
 }

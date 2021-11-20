@@ -5,13 +5,18 @@
 #ifndef LIKE1DB_TCP_SERVER_H
 #define LIKE1DB_TCP_SERVER_H
 
+#ifdef HAVE_EPOLL
 #include <sys/epoll.h>
+#endif
+#ifdef HAVE_KQUEUE
+#include <sys/event.h>
+#endif
 #include <vector>
 #include <atomic>
 #include <cassert>
 #include <CoroutineTask.h>
 
-#include "log.h"
+#include "common/log.h"
 
 class tcp_server {
     using fd_set = std::vector<int>;
@@ -21,7 +26,9 @@ private:
     logger logger = logger::log();
 
     int epoll_fd = {0};
+#ifdef HAVE_EPOLL
     epoll_event events[max_epoll_size]{};
+#endif
     fd_set listen_fds{};
 
     std::atomic_bool stopped{false};
@@ -36,7 +43,7 @@ public:
 
     void stop();
 
-    void loop();
+    void start();
 
     CoroutineTask accept_request(int fd);
 

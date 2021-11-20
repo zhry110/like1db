@@ -20,7 +20,7 @@ CoroutineTask CoroutineTask::promise_type::get_return_object() {
 }
 
 suspend_never CoroutineTask::promise_type::initial_suspend() const {
-    return suspend_never();
+    return {};
 }
 
 void CoroutineTask::promise_type::unhandled_exception() const {
@@ -32,5 +32,5 @@ void CoroutineTask::promise_type::return_void() const {
 }
 
 suspend_never CoroutineTask::promise_type::final_suspend() const noexcept {
-    return suspend_never();
+    return {};
 }
