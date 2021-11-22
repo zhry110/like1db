@@ -23,32 +23,57 @@ struct RedoFileHeader {
 };
 
 class RedoRecord {
- private:
+ public:
   enum Type : uint16_t {
     UNKNOWN = 1,
     WRITE_PAGE,
     CREATE_FILE,
     DELETE_FILE,
   };
-  Type type{};
+ protected:
+  size_t len{0};
+  Type type;
  public:
-  virtual bool redo() = 0;
-  virtual size_t length() const = 0;
+  explicit RedoRecord(Type type) : type(type) {}
+  [[nodiscard]] size_t length() const { return len; }
 };
 
 class WritePageRecord : public RedoRecord {
  private:
   Tableno table{BAD_TABLE_NO};
   Pageno page{BAD_PAGE_NO};
-  PagePos pos{0};
-  size_t len{0};
+  PagePos pos{};
   byte data[0];
  public:
-  WritePageRecord(Tableno table, Pageno page, PagePos pos, size_t len, byte *data);
-  bool redo() override;
-  [[nodiscard]] size_t length() const override {
-    return sizeof(WritePageRecord);
+  WritePageRecord() : RedoRecord(WRITE_PAGE) {};
+
+  bool redo();
+  static WritePageRecord *new_record(Tableno table_no,
+                                     PageNo page_no, PagePos pos,
+                                     byte *buf, size_t len);
+};
+
+class RedoRecordIterator {
+ public:
+  constexpr static size_t PAGE_SIZE = 52;
+ private:
+  int redo_fd;
+  FilePos end{0};
+  FilePos total_scan{0};
+  bool eof{false};
+
+  byte *buf;
+  size_t buf_len{0};
+  FilePos current_scan{0};
+ public:
+  explicit RedoRecordIterator(int fd) : redo_fd(fd) {
+    buf = new byte[PAGE_SIZE];
   }
+  ~RedoRecordIterator() {
+    delete buf;
+  }
+  RedoRecord *next();
+  void read_next_page();
 };
 
 class RedoLog {
@@ -68,17 +93,21 @@ class RedoLog {
 
   static void initialize(const path &redo_log_path);
 
-  void recovery();
-
   void checkpoint();
 
   void log(const RedoRecord &record);
 
   void commit(lsn to);
 
+  RedoRecordIterator record_iterator() const {
+    return RedoRecordIterator(current_redo_log);
+  }
+
   ~RedoLog() {
     close(current_redo_log);
   }
 };
+
+
 
 #endif //LIKE1DB_REDOLOG_H
