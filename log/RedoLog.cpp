@@ -23,8 +23,13 @@ RedoLog::RedoLog(const path &data) : redo_log_path(data / "redo") {
   }
   log_file_counter = stoll(current_redo_log_name.filename().c_str());
   assert(log_file_counter > 0);
-  current_redo_log = open(current_redo_log_name.c_str(), O_RDWR | O_APPEND);
+  current_redo_log = open(current_redo_log_name.c_str(), O_RDWR);
   assert(current_redo_log != -1);
+  RedoFileHeader header;
+  ssize_t rdn = read(current_redo_log, &header, sizeof(RedoFileHeader));
+  assert(rdn == sizeof(RedoFileHeader));
+  start_lsn = header.start_lsn;
+  last_checkpoint = header.last_checkpoint;
 }
 void RedoLog::initialize(const filesystem::path &redo_log_path) {
   cout << "[Info]: Initialize redo files" << endl;
@@ -37,26 +42,30 @@ void RedoLog::initialize(const filesystem::path &redo_log_path) {
   int redo_log = open((current_file_name).c_str(), O_CREAT | O_RDWR, S_IRWXU);
   assert(redo_log != -1);
   auto *header = new RedoFileHeader;
-  header->free = sizeof(RedoFileHeader) + 88;
   ssize_t len = write(redo_log, header, sizeof(RedoFileHeader));
   assert(len == sizeof(RedoFileHeader));
 
   cout << "[Info]: Redo file " << current_file_name << " created" << endl;
   string a = "abcd";
   auto record = WritePageRecord::new_record(1, 1, 123, (byte *) a.c_str(), a.length());
-  ssize_t wtn = write(redo_log, record, record->length());
-  wtn = write(redo_log, record, record->length());
-  cout << wtn << " bytes wrote" << endl;
-  delete record;
+  //ssize_t wtn = write(redo_log, record, record->length());
+  //wtn = write(redo_log, record, record->length());
+  //cout << wtn << " bytes wrote" << endl;
   close(redo_log);
-  filesystem::resize_file(current_file_name, RedoFileHeader::REDO_FILE_SIZE);
+
+  RedoLog log("db");
+  log.log(record);
+  log.log(record);
+  log.log(record);
+  delete record;
 }
 void RedoLog::checkpoint() {
 
 }
-void RedoLog::log(const RedoRecord &record) {
-  ssize_t wtn = write(current_redo_log, &record, record.length());
-  assert(record.length() == wtn);
+lsn RedoLog::log(const RedoRecord *record) {
+  ssize_t wtn = write(current_redo_log, record, record->length());
+  assert(record->length() == wtn);
+  return current_lsn.fetch_add(record->length());
 }
 void RedoLog::commit(lsn to) {
 
@@ -69,62 +78,4 @@ string RedoLog::new_redo_file_name(int no) {
     name.insert(name.begin(), '0');
   }
   return name;
-}
-bool WritePageRecord::redo() {
-  cout << "Write page " << page << " of Table " << table;
-  cout << ", value length is " << len - sizeof(WritePageRecord) << endl;
-  return false;
-}
-WritePageRecord *WritePageRecord::new_record(Tableno table_no,
-                                             PageNo page_no, PagePos pos,
-                                             byte *buf, size_t len) {
-  auto mem = new byte[len + sizeof(WritePageRecord)];
-  auto record = new(mem) WritePageRecord;
-  record->table = table_no;
-  record->page = page_no;
-  record->len = len + sizeof(WritePageRecord);
-  record->pos = pos;
-  byte *data = reinterpret_cast<byte *>(record + 1);
-  memcpy(data, buf, len);
-  return record;
-}
-
-RedoRecord *RedoRecordIterator::next() {
-  if (total_scan == 0) {
-    RedoFileHeader header;
-    total_scan = sizeof(RedoFileHeader);
-    if (lseek(redo_fd, 0, SEEK_SET) == -1 || read(redo_fd, &header, total_scan) != total_scan) {
-      std::terminate();
-    }
-    end = header.free;
-  } else if (total_scan == end) {
-    return nullptr;
-  } else if (eof) {
-    cout << "[Error]: Unexpected end of file" << endl;
-    std::terminate();
-  }
-  if (current_scan + sizeof(size_t) > buf_len) {
-    read_next_page();
-  }
-  size_t record_len = *(size_t *) buf;
-  if (record_len + current_scan > buf_len) {
-    read_next_page();
-  }
-  auto record = (RedoRecord *) (buf + current_scan);
-  current_scan += record_len;
-  total_scan += record_len;
-  return record;
-}
-void RedoRecordIterator::read_next_page() {
-  if (lseek(redo_fd, (off_t) current_scan - (off_t) buf_len, SEEK_CUR) == -1) {
-    terminate();
-  }
-  buf_len = ::read(redo_fd, buf, PAGE_SIZE);
-  if (total_scan + buf_len >= end) {
-    buf_len = (ssize_t) end - (ssize_t) total_scan;
-  }
-  if (buf_len == 0) {
-    eof = true;
-  }
-  current_scan = 0;
 }

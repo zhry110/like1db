@@ -15,9 +15,20 @@ class Page {
   enum PageType {
     INDEX_BTREE
   };
+  class PageId {
+   private:
+    TableNo table_no;
+    PageNo page_no;
+   public:
+    PageId(TableNo table_no, PageNo page_no);
+    bool operator==(const PageId &rhs) const;
+    bool operator!=(const PageId &rhs) const;
+  };
  protected:
   /** common header */
   Checksum checksum;
+  TableNo table_no;
+  PageNo page_no;
   PageType type;
   PageNo next;
   PageNo prev;
