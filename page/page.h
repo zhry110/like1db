@@ -27,8 +27,7 @@ class Page {
  protected:
   /** common header */
   Checksum checksum;
-  TableNo table_no;
-  PageNo page_no;
+  PageId id;
   PageType type;
   PageNo next;
   PageNo prev;

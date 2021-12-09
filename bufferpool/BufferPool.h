@@ -9,11 +9,11 @@
 
 class BufferPool {
  public:
-  BufferPool(size_t size) {}
-  Page *load_for_read(TableNo t_no, Pageno p_no) {
+  explicit BufferPool(size_t size) {}
+  Page *read(Page::PageId id) {
     return nullptr;
   }
-  Page *load_for_write(TableNo t_no, Pageno p_no) {
+  Page *write(Page::PageId id) {
     return nullptr;
   }
   void release(Page *page) {};
