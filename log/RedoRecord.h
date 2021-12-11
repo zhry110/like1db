@@ -27,7 +27,7 @@ class RedoRecord {
 
 class WritePageRecord : public RedoRecord {
  private:
-  TableNo table{BAD_TABLE_NO};
+  TableId table{BAD_TABLE_NO};
   Pageno page{BAD_PAGE_NO};
   PagePos pos{};
   byte data[0];
@@ -35,7 +35,7 @@ class WritePageRecord : public RedoRecord {
   WritePageRecord() : RedoRecord(WRITE_PAGE) {};
 
   bool redo();
-  static WritePageRecord *new_record(TableNo table_no,
+  static WritePageRecord *new_record(TableId table_no,
                                      PageNo page_no, PagePos pos,
                                      byte *buf, size_t len);
 };

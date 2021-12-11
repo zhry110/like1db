@@ -13,7 +13,7 @@ bool WritePageRecord::redo() {
   return false;
 }
 
-WritePageRecord *WritePageRecord::new_record(TableNo table_no,
+WritePageRecord *WritePageRecord::new_record(TableId table_no,
                                              PageNo page_no, PagePos pos,
                                              byte *buf, size_t len) {
   auto mem = new byte[len + sizeof(WritePageRecord)];

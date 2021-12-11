@@ -17,10 +17,10 @@ class Page {
   };
   class PageId {
    private:
-    TableNo table_no;
+    TableId table_no;
     PageNo page_no;
    public:
-    PageId(TableNo table_no, PageNo page_no);
+    PageId(TableId table_no, PageNo page_no);
     bool operator==(const PageId &rhs) const;
     bool operator!=(const PageId &rhs) const;
   };

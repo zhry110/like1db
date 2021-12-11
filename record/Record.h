@@ -6,39 +6,58 @@
 #define LIKE1DB_PAGE_RECORD_H_
 #include <vector>
 #include <map>
-#include "Filed.h"
+#include "Field.h"
 
 struct Value {
+ private:
+  const Field *field;
   std::byte *value;
-  Value &operator=(long long val) const {
-    *(long long *) value = val;
+ public:
+  size_t len{0};
+  bool null_value{true};
+ public:
+  explicit Value(const Field *filed) : field(filed) {
+    value = static_cast<std::byte *>(malloc(field->length()));
+    len = field->fixed_length() ? field->length() : 0;
   }
-  Value &operator=(int val) const {
-    *(int *) value = val;
+  template<class T>
+  Value &operator=(T val) {
+    if (field->length() < sizeof(val)) {
+      // todo failed
+    }
+    *(T *) value = val;
+    return *this;
   }
-  Value &operator=(bool val) const {
-    *(bool *) value = val;
+  Value &operator=(const std::string &str) {
+    memcpy(value, str.c_str(), field->length());
+    this->len = str.length();
+    return *this;
   }
 };
 
 class Record {
  private:
   std::byte *data;
-  int data_len;
-  std::map<std::string, Value> values;
+  size_t data_len{0};
+  std::map<std::string, Value *> names{};
+  std::vector<Value *> fields;
 
  public:
-  explicit Record(const std::vector<Filed *> &fields) {
+  explicit Record(const std::vector<const Field *> &fields) {
     if (fields.empty()) {
       std::terminate();
     }
-    for (auto &filed: fields) {
-      data_len += filed->length();
+    for (auto &field: fields) {
+      data_len += field->length();
+      auto value = new Value(field);
+      names[field->name()] = value;
+      this->fields.push_back(value);
     }
     data = new std::byte[data_len];
   }
-  void append(const Filed &filed, std::byte *data);
-  void reset() { memset(data, data_len, sizeof(std::byte)); }
+  Value &operator[](size_t index);
+  Value &operator[](const std::string &field_name);
+  void reset() { memset(data, (int) data_len, sizeof(std::byte)); }
   virtual ~Record();
 };
 

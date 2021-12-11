@@ -12,7 +12,7 @@ class RecordScanner {
 };
 class Index {
  private:
-  TableNo table_no;
+  TableId table_no;
   std::string name;
  public:
   enum Order {
