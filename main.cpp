@@ -3,14 +3,14 @@
 #include "Like1db.h"
 #include <string>
 
-#include "record/Record.h"
+#include "storage/record/Record.h"
 
 int main() {
   //RedoLog::initialize("db/redo");
   Like1db db{"db"};
   db.start();
-  std::vector<const Field*> fields;
-  fields.push_back(new Field("a", Field::INT, 4));
+  std::vector<const Field *> fields;
+  fields.push_back(new IntField("a", true, true, 4));
   Record record(fields);
   record[0] = 5;
   record["a"] = 6;

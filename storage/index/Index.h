@@ -5,7 +5,7 @@
 #ifndef LIKE1DB_STORAGE_INDEX_INDEX_H_
 #define LIKE1DB_STORAGE_INDEX_INDEX_H_
 #include "common/common.h"
-#include "record/Record.h"
+#include "storage/record/Record.h"
 class RecordScanner {
  public:
   virtual Record *next() = 0;

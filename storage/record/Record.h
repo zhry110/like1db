@@ -26,19 +26,19 @@ struct Value {
       // todo failed
     }
     *(T *) value = val;
+    null_value = false;
     return *this;
   }
   Value &operator=(const std::string &str) {
     memcpy(value, str.c_str(), field->length());
     this->len = str.length();
+    null_value = false;
     return *this;
   }
 };
 
 class Record {
  private:
-  std::byte *data;
-  size_t data_len{0};
   std::map<std::string, Value *> names{};
   std::vector<Value *> fields;
 
@@ -48,16 +48,13 @@ class Record {
       std::terminate();
     }
     for (auto &field: fields) {
-      data_len += field->length();
       auto value = new Value(field);
       names[field->name()] = value;
       this->fields.push_back(value);
     }
-    data = new std::byte[data_len];
   }
   Value &operator[](size_t index);
   Value &operator[](const std::string &field_name);
-  void reset() { memset(data, (int) data_len, sizeof(std::byte)); }
   virtual ~Record();
 };
 

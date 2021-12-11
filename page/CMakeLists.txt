@@ -1,2 +1,2 @@
 include_directories(../)
-add_library(page page.cpp ../record/Record.cpp ../record/Record.h)
+add_library(page page.cpp ../storage/record/Record.cpp ../storage/record/Record.h)

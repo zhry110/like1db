@@ -7,7 +7,7 @@
 
 #include "common/common.h"
 #include "page/page.h"
-#include "record/Record.h"
+#include "storage/record/Record.h"
 #include "storage/index/Index.h"
 #include "Like1db.h"
 

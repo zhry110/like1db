@@ -4,7 +4,6 @@
 
 #include "Record.h"
 Record::~Record() {
-  delete data;
 }
 Value &Record::operator[](size_t index) {
   return *fields[index];
